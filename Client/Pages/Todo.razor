@@ -1,0 +1,62 @@
+﻿@page "/todo"
+@using TodoList.Client.Services.ToDoService
+@using TodoList.Shared
+@inject IToDoService ToDoService
+@implements IDisposable
+
+<PageTitle>Todo</PageTitle>
+
+<h3>Todo (@ToDoService.ToDos.Count(todo => !todo.IsDone))</h3>
+
+<input placeholder="todo" @bind="newTodoTitle" />
+<InputFile OnChange="HandleFileSelected" accept="image/jpeg, image/png" />
+<button @onclick="AddToDo">Add todo</button>
+
+<ul>
+	@foreach (var todo in ToDoService.ToDos)
+	{
+		<li>
+			<input type="checkbox" @bind="todo.IsDone" />
+			<input @bind="todo.Title"/>
+			<img class="img-ninetysize" src="@todo.ImageUrl"/>
+			<button @onclick="async () => await DeleteToDo(todo)">Delete</button>
+			<button @onclick="async () => await UpdateToDoTitle(todo.id, todo.Title)">Update</button>
+		</li>
+	}
+</ul>
+
+@code
+{
+	private string newTodoTitle;
+	private IBrowserFile selectedFile;
+
+	protected override async Task OnInitializedAsync()
+	{
+		ToDoService.OnChanged += StateHasChanged;
+		await ToDoService.LoadAllToDos();
+	}
+	public void Dispose()
+	{
+		ToDoService.OnChanged -= StateHasChanged;
+	}
+
+	private async Task AddToDo()
+	{
+		await ToDoService.AddToDo(newTodoTitle, selectedFile);
+	}
+
+	private async Task DeleteToDo(TodoItem todo)
+	{
+		await ToDoService.DeleteToDo(todo);
+	}
+
+	private async Task UpdateToDoTitle(string id, string title)
+	{
+		await ToDoService.UpdateToDoTitle(id, title);
+	}
+
+	private async Task HandleFileSelected(InputFileChangeEventArgs e)
+	{
+		selectedFile = e.File;
+	}
+}
